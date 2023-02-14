@@ -1,95 +1,53 @@
-# Copyright(c) 2020 eaibot limited.
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.3)
+project(ydlidar_ros)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+#add_definitions(-std=c++11) # Use C++11
 
-project(ydlidar_ros_driver)
-
-
-############## YDLIDAR SDK START#####################################
-#find ydlidar_sdk package
-find_package(ydlidar_sdk REQUIRED)
-
-############## YDLIDAR SDK END#####################################
-
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  	message_generation
-	roscpp
-	rospy
-	sensor_msgs
-	)
+  rosconsole
+  roscpp
+  sensor_msgs
+)
 
-##################LaserFan ##########################
-#add_message_files(DIRECTORY msg
-#  FILES
-#  LaserFan.msg
-#)
+#add_subdirectory(sdk)
 
-#generate_messages(DEPENDENCIES
-#  std_msgs
-#)
+set(SDK_PATH "./sdk/")
 
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if your package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects als    o need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(CATKIN_DEPENDS
-	roscpp rospy sensor_msgs message_runtime
-	)
-#---------------------------------------------------------------------------------------
-# Set default build to release
-#---------------------------------------------------------------------------------------
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose Release or Debug" FORCE)
-endif()
+FILE(GLOB SDK_SRC 
+  "${SDK_PATH}/src/impl/unix/*.cpp"
+  "${SDK_PATH}/src/*.cpp"
+  "${SDK_PATH}/src/*.c"
+)
 
-#---------------------------------------------------------------------------------------
-# Compiler config
-#---------------------------------------------------------------------------------------
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+catkin_package()
 
-#Include directories
-include_directories(${catkin_INCLUDE_DIRS} ${YDLIDAR_SDK_INCLUDE_DIRS})
+include_directories(
+  ${catkin_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/sdk/include
+  ${PROJECT_SOURCE_DIR}/sdk/src
+)
 
-#link library directories
-link_directories(${YDLIDAR_SDK_LIBRARY_DIRS})
+add_executable(ydlidar_node src/ydlidar_node.cpp  ${SDK_SRC})
+add_executable(ydlidar_client src/ydlidar_client.cpp)
+
+target_link_libraries(ydlidar_node
+   ${catkin_LIBRARIES} 
+ )
+target_link_libraries(ydlidar_client
+   ${catkin_LIBRARIES} 
+ )
+
+install(TARGETS ydlidar_node ydlidar_client
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 
+install(DIRECTORY launch startup sdk
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  USE_SOURCE_PERMISSIONS
+)
 
-#---------------------------------------------------------------------------------------
-# generate excutable and add libraries
-#---------------------------------------------------------------------------------------
-add_executable(${PROJECT_NAME}_node src/ydlidar_ros_driver.cpp)
-
-#---------------------------------------------------------------------------------------
-# add projects that depend on
-#---------------------------------------------------------------------------------------
-#add_dependencies(${PROJECT_NAME}_node ${PROJECT_NAME}_generate_messages_cpp)
-
-#---------------------------------------------------------------------------------------
-# link libraries
-#---------------------------------------------------------------------------------------
-target_link_libraries(${PROJECT_NAME}_node
-	${catkin_LIBRARIES}
-	${YDLIDAR_SDK_LIBRARIES}
-	)
-
-
-#---------------------------------------------------------------------------------------
-# Install
-#---------------------------------------------------------------------------------------
-
-install(TARGETS ${PROJECT_NAME}_node
-	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-	)
 
